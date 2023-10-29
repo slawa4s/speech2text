@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "our_speech_to_text"
+version = "0.0.0"
+description = ""
+authors = ["Viacheslav Suvorov <viacheslav.suvorov@jetbrains.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.11,<3.13"
+pandas = "^2.1.2"
+torch = "^2.1.0"
+transformers = "^4.34.1"
+datasets = "^2.14.6"
+torchaudio = "^2.1.0"
+sentencepiece = "^0.1.99"
+soundfile = "^0.12.1"
+librosa = "^0.10.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
