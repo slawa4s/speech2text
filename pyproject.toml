@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "pytorch"
+version = "2.1"
+description = ""
+authors = ["Viacheslav Suvorov <viacheslav.suvorov@jetbrains.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "3.12"
+pandas = "^2.1.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
