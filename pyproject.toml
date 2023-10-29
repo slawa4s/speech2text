@@ -1,13 +1,14 @@
 [tool.poetry]
-name = "pytorch"
-version = "2.1"
+name = "our_speech_to_text"
+version = "0.0.0"
 description = ""
 authors = ["Viacheslav Suvorov <viacheslav.suvorov@jetbrains.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "3.12"
+python = ">=3.11,<3.13"
 pandas = "^2.1.2"
+torch = "^2.1.0"
 
 
 [build-system]
