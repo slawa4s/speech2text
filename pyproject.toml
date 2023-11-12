@@ -15,7 +15,7 @@ torchaudio = "^2.1.0"
 sentencepiece = "^0.1.99"
 soundfile = "^0.12.1"
 librosa = "^0.10.1"
-
+accelerate = ">=0.20.1"
 
 [build-system]
 requires = ["poetry-core"]
