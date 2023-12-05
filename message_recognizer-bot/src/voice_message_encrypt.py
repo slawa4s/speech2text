@@ -1,12 +1,11 @@
 import io
 
 from telegram import File, ForceReply
-import torch
 from scipy.signal import decimate
 from telegram.ext import Application, MessageHandler, filters, CommandHandler, CallbackContext, CallbackQueryHandler
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from dotenv import load_dotenv
-from transformers import Wav2Vec2Processor, SpeechEncoderDecoderModel
+from transformers import WhisperForConditionalGeneration, WhisperProcessor
 import soundfile as sf
 import logging
 import os
@@ -23,10 +22,10 @@ logging.basicConfig(
 logging.getLogger("httpx")
 logger = logging.getLogger(__name__)
 
-MODEL_ID = "bond005/wav2vec2-mbart50-ru"
+MODEL_ID = "gggggggg123/whisper-small-ru-golos"
 
-processor = Wav2Vec2Processor.from_pretrained(MODEL_ID)
-model = SpeechEncoderDecoderModel.from_pretrained(MODEL_ID)
+processor = WhisperProcessor.from_pretrained("openai/whisper-small", language="russian", task="transcribe")
+model = WhisperForConditionalGeneration.from_pretrained(MODEL_ID)
 
 savedData = []
 unique_id_to_id = {}
@@ -57,17 +56,10 @@ async def handle_voice_message(update: Update, context: CallbackContext):
     voice_byte: bytearray = await voice_file_for_download.download_as_bytearray()
     voice_data, sample_rate = get_correct_voice_data_and_rate(voice_byte)
 
-    processed = processor(voice_data, sampling_rate=sample_rate, return_tensors="pt", padding='longest')
-    num_processes = max(1, os.cpu_count())
+    input_features = processor(voice_data, sampling_rate=sample_rate, return_tensors="pt").input_features
 
-    with torch.no_grad():
-        predicted_ids = model.generate(**processed)
-
-    predicted_sentence: str = processor.batch_decode(
-        predicted_ids,
-        num_processes=num_processes,
-        skip_special_tokens=True
-    )[0]
+    predicted_ids = model.generate(input_features)
+    predicted_sentence = processor.batch_decode(predicted_ids, skip_special_tokens=True)[0]
 
     logger.log(logging.INFO, predicted_sentence)
 
@@ -82,7 +74,9 @@ async def handle_voice_message(update: Update, context: CallbackContext):
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     await update.message.reply_text(text=f"{predicted_sentence}\n\n{TRANSLATION_ACCURACY_QUESTION}",
-                                    reply_markup=reply_markup)
+                                    reply_markup=reply_markup,
+                                    reply_to_message_id=update.message.message_id,
+                                    quote=True)
 
 
 # The rest of the code will remain same
