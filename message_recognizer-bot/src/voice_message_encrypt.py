@@ -1,4 +1,5 @@
 import io
+import json
 
 from telegram import File, ForceReply
 from scipy.signal import decimate
@@ -9,12 +10,11 @@ from transformers import WhisperForConditionalGeneration, WhisperProcessor
 import soundfile as sf
 import logging
 import os
+import boto3
 
-load_dotenv()
-TOKEN = os.getenv('TELEGRAM_TOKEN')
+print(boto3.__version__)
 
-FEEDBACK_PROMPT = "Please provide your feedback."
-TRANSLATION_ACCURACY_QUESTION = "Is this the correct translation?"
+MODEL_ID = "gggggggg123/whisper-small-ru-golos"
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.WARNING
@@ -22,10 +22,26 @@ logging.basicConfig(
 logging.getLogger("httpx")
 logger = logging.getLogger(__name__)
 
-MODEL_ID = "gggggggg123/whisper-small-ru-golos"
+load_dotenv()
+TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
+region_name = os.getenv('REGION')
+aws_access_key_id = os.getenv('AWS_KEY_ID')
+aws_secret_access_key = os.getenv('AWS_SECRET_KEY')
+bucket_name = os.getenv('BUCKET_NAME')
 
-processor = WhisperProcessor.from_pretrained("openai/whisper-small", language="russian", task="transcribe")
+FEEDBACK_PROMPT = "Please provide your feedback."
+TRANSLATION_ACCURACY_QUESTION = "Is this the correct translation?"
+
+processor = WhisperProcessor.from_pretrained("openai/whisper-small",
+                                             language="russian",
+                                             task="transcribe")
+
 model = WhisperForConditionalGeneration.from_pretrained(MODEL_ID)
+
+s3 = boto3.client('s3',
+                  region_name=region_name,
+                  aws_access_key_id=aws_access_key_id,
+                  aws_secret_access_key=aws_secret_access_key)
 
 savedData = []
 unique_id_to_id = {}
@@ -36,7 +52,14 @@ async def saveData(voice_file_id: str, context: CallbackContext, text: str):
     voice_byte: bytearray = await voice_file_for_download.download_as_bytearray()
     voice_data, sample_rate = get_correct_voice_data_and_rate(voice_byte)
 
-    savedData.append({"audio": voice_data, "text": text, "sample_rate": sample_rate})
+    json_data = json.dumps({"audio": voice_data.tolist(), "text": text, "sample_rate": sample_rate})
+    try:
+        s3.put_object(Body=json_data,
+                      Bucket=bucket_name,
+                      Key=voice_file_id)
+        logger.log(logging.INFO, f"File '{voice_file_id}' uploaded successfully to bucket '{bucket_name}'")
+    except Exception as e:
+        logger.log(logging.INFO, f"Error uploading file to S3: {e}")
 
 
 async def start(update: Update, context: CallbackContext):
@@ -131,7 +154,7 @@ async def ask_for_correct_translation_button(update: Update, context: CallbackCo
 
 
 def main():
-    application = Application.builder().token(TOKEN).build()
+    application = Application.builder().token(TELEGRAM_TOKEN).build()
 
     application.add_handler(CommandHandler("start", start))
 
