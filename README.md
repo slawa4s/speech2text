@@ -10,8 +10,10 @@ Fine-tuned whisper model for ASR of Russian language.
 **[Dataset](https://paperswithcode.com/dataset/golos)**
 
 The training process is in [train.py](https://github.com/slawa4s/speech2text/blob/main/src/train.ipynb)
+
 Bot sources are in [message_recognizer-bot/src](https://github.com/slawa4s/speech2text/tree/main/message_recognizer-bot/src)
-To execute [voice_message_encrypt.py](https://github.com/slawa4s/speech2text/blob/main/message_recognizer-bot/src/voice_message_encrypt.py) provide proper
+
+To make the working bot instance execute [voice_message_encrypt.py](https://github.com/slawa4s/speech2text/blob/main/message_recognizer-bot/src/voice_message_encrypt.py) provide proper env variables:
 
 ```bash
 export TELEGRAM_TOKEN=...
