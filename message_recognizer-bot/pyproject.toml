@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "message-recognizer-bot"
+version = "0.1.0"
+description = ""
+authors = ["Viacheslav Suvorov <viacheslav.suvorov@jetbrains.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "<3.13,>=3.9"
+scipy = "^1.11.3"
+python-telegram-bot = "20.7"
+python-dotenv = "^0.17.1"
+soundfile = "0.12.1"
+torch = "^2.1.0"
+transformers = "^4.34.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
