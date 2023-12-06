@@ -4,4 +4,4 @@ scipy==1.11.4
 python-dotenv==1.0.0
 transformers==4.35.2
 torch==2.1.1
-boto3=1.33.8
+boto3==1.33.8
