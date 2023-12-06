@@ -12,8 +12,6 @@ import logging
 import os
 import boto3
 
-print(boto3.__version__)
-
 MODEL_ID = "gggggggg123/whisper-small-ru-golos"
 
 logging.basicConfig(
@@ -32,11 +30,17 @@ bucket_name = os.getenv('BUCKET_NAME')
 FEEDBACK_PROMPT = "Please provide your feedback."
 TRANSLATION_ACCURACY_QUESTION = "Is this the correct translation?"
 
-processor = WhisperProcessor.from_pretrained("openai/whisper-small",
-                                             language="russian",
-                                             task="transcribe")
+processor = WhisperProcessor.from_pretrained("openai/whisper-small")
 
-model = WhisperForConditionalGeneration.from_pretrained(MODEL_ID)
+forced_decoder_ids = processor.get_decoder_prompt_ids(language="russian", task="transcribe")
+
+model = WhisperForConditionalGeneration.from_pretrained("openai/whisper-small")
+
+# processor = WhisperProcessor.from_pretrained("openai/whisper-small",
+#                                              language="russian",
+#                                              task="transcribe")
+#
+# model = WhisperForConditionalGeneration.from_pretrained(MODEL_ID)
 
 s3 = boto3.client('s3',
                   region_name=region_name,
@@ -81,7 +85,7 @@ async def handle_voice_message(update: Update, context: CallbackContext):
 
     input_features = processor(voice_data, sampling_rate=sample_rate, return_tensors="pt").input_features
 
-    predicted_ids = model.generate(input_features)
+    predicted_ids = model.generate(input_features, forced_decoder_ids=forced_decoder_ids)
     predicted_sentence = processor.batch_decode(predicted_ids, skip_special_tokens=True)[0]
 
     logger.log(logging.INFO, predicted_sentence)
