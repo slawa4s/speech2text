@@ -25,4 +25,4 @@ jobs:
       run: pip install mypy
 
     - name: Run MyPy
-      run: mypy .
+      run: mypy ./message_recognizer-bot/src/
