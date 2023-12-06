@@ -3,7 +3,7 @@
 - Viacheslav Suvorov
 - Georgii Zorabov
 
-Fine-tuned whisper model for ASR of Russian language.
+Fine-tuned whisper model for [ASR](https://huggingface.co/tasks/automatic-speech-recognition) of Russian language.
 
 **[Model](https://arxiv.org/pdf/2212.04356.pdf)**
 
