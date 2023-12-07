@@ -17,7 +17,7 @@ MODEL_ID = "gggggggg123/whisper-small-ru-golos"
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.WARNING
 )
-logging.getLogger("httpx")
+logging.getLogger().setLevel(logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 load_dotenv()
@@ -52,6 +52,7 @@ unique_id_to_id = {}
 
 
 async def saveData(voice_file_id: str, context: CallbackContext, text: str):
+    logger.log(logging.INFO, f"Entered saveData function")
     voice_file_for_download: File = await context.bot.get_file(voice_file_id)
     voice_byte: bytearray = await voice_file_for_download.download_as_bytearray()
     voice_data, sample_rate = get_correct_voice_data_and_rate(voice_byte)
