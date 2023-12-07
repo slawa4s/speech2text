@@ -27,20 +27,24 @@ aws_access_key_id = os.getenv('AWS_KEY_ID')
 aws_secret_access_key = os.getenv('AWS_SECRET_KEY')
 bucket_name = os.getenv('BUCKET_NAME')
 
-FEEDBACK_PROMPT = "Please provide your feedback."
-TRANSLATION_ACCURACY_QUESTION = "Is this the correct translation?"
+START_MSG = "Привет! Отправьте мне голосовое сообщение"
+TRANSLATION_ACCURACY_QUESTION = "Это правильный перевод?"
+IGNORE_PREVIOUS_SUGGESTION = "Пожалуйста, проигнорируйте предыдущее предложение и попробуйте другой вариант перевода."
+THANK_YOU_FOR_REPLY = "Спасибо за ответ."
+THANK_YOU_FOR_EVALUATION = "Спасибо за вашу оценку!"
+PROVIDE_ACCURATE_TRANSLATION = "Могли бы вы предоставить точный перевод?"
 
-processor = WhisperProcessor.from_pretrained("openai/whisper-small")
-
-forced_decoder_ids = processor.get_decoder_prompt_ids(language="russian", task="transcribe")
-
-model = WhisperForConditionalGeneration.from_pretrained("openai/whisper-small")
-
-# processor = WhisperProcessor.from_pretrained("openai/whisper-small",
-#                                              language="russian",
-#                                              task="transcribe")
+# processor = WhisperProcessor.from_pretrained("openai/whisper-small")
 #
-# model = WhisperForConditionalGeneration.from_pretrained(MODEL_ID)
+# forced_decoder_ids = processor.get_decoder_prompt_ids(language="russian", task="transcribe")
+#
+# model = WhisperForConditionalGeneration.from_pretrained("openai/whisper-small")
+
+processor = WhisperProcessor.from_pretrained("openai/whisper-small",
+                                             language="russian",
+                                             task="transcribe")
+
+model = WhisperForConditionalGeneration.from_pretrained(MODEL_ID)
 
 s3 = boto3.client('s3',
                   region_name=region_name,
@@ -68,7 +72,7 @@ async def saveData(voice_file_id: str, context: CallbackContext, text: str):
 
 
 async def start(update: Update, context: CallbackContext):
-    await update.message.reply_text("Hi! Send voice message to bot")
+    await update.message.reply_text(START_MSG)
 
 
 def get_correct_voice_data_and_rate(voice_byte: bytearray, target_sample_rate=16000):
@@ -86,7 +90,7 @@ async def handle_voice_message(update: Update, context: CallbackContext):
 
     input_features = processor(voice_data, sampling_rate=sample_rate, return_tensors="pt").input_features
 
-    predicted_ids = model.generate(input_features, forced_decoder_ids=forced_decoder_ids)
+    predicted_ids = model.generate(input_features) #, forced_decoder_ids=forced_decoder_ids)
     predicted_sentence = processor.batch_decode(predicted_ids, skip_special_tokens=True)[0]
 
     logger.log(logging.INFO, predicted_sentence)
@@ -116,7 +120,6 @@ async def accuracy_feedback_button(update: Update, context: CallbackContext) -> 
     feedback_on_id = query.data.split("_")[2]
 
     if query.data.startswith('accuracy_neg'):
-        reply = 'Could you provide the accurate translation?'
         keyboard = [
             [
                 InlineKeyboardButton("👍", callback_data=f"feedback_pos_{feedback_on_id}"),
@@ -125,18 +128,17 @@ async def accuracy_feedback_button(update: Update, context: CallbackContext) -> 
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
 
-        await query.edit_message_text(text=f'{predicted_sentence}\n\n{reply}', reply_markup=reply_markup)
+        await query.edit_message_text(text=f'{predicted_sentence}\n\n{PROVIDE_ACCURATE_TRANSLATION}', reply_markup=reply_markup)
     elif query.data.startswith('accuracy_pos'):
-        reply = 'Thank you for your evaluation!'
         await saveData(unique_id_to_id[feedback_on_id], context, predicted_sentence)
-        await query.edit_message_text(text=f"{predicted_sentence}\n\n{reply}")
+        await query.edit_message_text(text=f"{predicted_sentence}\n\n{THANK_YOU_FOR_EVALUATION}")
 
 
 async def handle_reply(update: Update, context: CallbackContext):
     message_id = unique_id_to_id[update.message.reply_to_message.text]
     if message_id is None:
         return
-    await update.message.reply_text(text='Thank you for reply')
+    await update.message.reply_text(text=THANK_YOU_FOR_REPLY)
     await update.message.reply_to_message.delete()
     await saveData(message_id, context, update.message.text)
 
@@ -147,7 +149,7 @@ async def ask_for_correct_translation_button(update: Update, context: CallbackCo
 
     if query.data.startswith('feedback_neg'):
         await query.edit_message_text(
-            text=f"{predicted_sentence}\n\nPlease ignore the previous suggestion and try a different translation.",
+            text=f"{predicted_sentence}\n\n{IGNORE_PREVIOUS_SUGGESTION}",
             reply_markup=None)
     elif query.data.startswith('feedback_pos'):
         feedback_on = query.data.split("_")[2]
