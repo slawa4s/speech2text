@@ -11,6 +11,7 @@ import soundfile as sf
 import logging
 import os
 import boto3
+import re
 
 MODEL_ID = "gggggggg123/whisper-small-ru-golos"
 
@@ -33,6 +34,7 @@ IGNORE_PREVIOUS_SUGGESTION = "Пожалуйста, проигнорируйте
 THANK_YOU_FOR_REPLY = "Спасибо за ответ."
 THANK_YOU_FOR_EVALUATION = "Спасибо за вашу оценку!"
 PROVIDE_ACCURATE_TRANSLATION = "Могли бы вы предоставить точный перевод?"
+NOT_RECOGNIZABLE = "Не смог распознать"
 
 # processor = WhisperProcessor.from_pretrained("openai/whisper-small")
 #
@@ -75,6 +77,12 @@ async def start(update: Update, context: CallbackContext):
     await update.message.reply_text(START_MSG)
 
 
+def contains_only_russian(text):
+    if re.findall("[^а-яА-Я\s0-1,.;?!]", text) or len(text) == 0:
+        return False
+    return True
+
+
 def get_correct_voice_data_and_rate(voice_byte: bytearray, target_sample_rate=16000):
     buffer = io.BytesIO(voice_byte)
     buffer.seek(0)
@@ -90,10 +98,16 @@ async def handle_voice_message(update: Update, context: CallbackContext):
 
     input_features = processor(voice_data, sampling_rate=sample_rate, return_tensors="pt").input_features
 
-    predicted_ids = model.generate(input_features) #, forced_decoder_ids=forced_decoder_ids)
+    predicted_ids = model.generate(input_features)  # , forced_decoder_ids=forced_decoder_ids)
+
     predicted_sentence = processor.batch_decode(predicted_ids, skip_special_tokens=True)[0]
 
     logger.log(logging.INFO, predicted_sentence)
+
+    if not contains_only_russian(predicted_sentence):
+        await update.message.reply_text(text=NOT_RECOGNIZABLE,
+                                        reply_to_message_id=update.message.message_id)
+        return
 
     unique_id_to_id[update.message.voice.file_unique_id] = update.message.voice.file_id
 
@@ -128,7 +142,8 @@ async def accuracy_feedback_button(update: Update, context: CallbackContext) -> 
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
 
-        await query.edit_message_text(text=f'{predicted_sentence}\n\n{PROVIDE_ACCURATE_TRANSLATION}', reply_markup=reply_markup)
+        await query.edit_message_text(text=f'{predicted_sentence}\n\n{PROVIDE_ACCURATE_TRANSLATION}',
+                                      reply_markup=reply_markup)
     elif query.data.startswith('accuracy_pos'):
         await saveData(unique_id_to_id[feedback_on_id], context, predicted_sentence)
         await query.edit_message_text(text=f"{predicted_sentence}\n\n{THANK_YOU_FOR_EVALUATION}")
