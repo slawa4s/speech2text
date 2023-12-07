@@ -34,17 +34,17 @@ THANK_YOU_FOR_REPLY = "Спасибо за ответ."
 THANK_YOU_FOR_EVALUATION = "Спасибо за вашу оценку!"
 PROVIDE_ACCURATE_TRANSLATION = "Могли бы вы предоставить точный перевод?"
 
-# processor = WhisperProcessor.from_pretrained("openai/whisper-small")
-#
-# forced_decoder_ids = processor.get_decoder_prompt_ids(language="russian", task="transcribe")
-#
-# model = WhisperForConditionalGeneration.from_pretrained("openai/whisper-small")
+processor = WhisperProcessor.from_pretrained("openai/whisper-small")
 
-processor = WhisperProcessor.from_pretrained("openai/whisper-small",
-                                             language="russian",
-                                             task="transcribe")
+forced_decoder_ids = processor.get_decoder_prompt_ids(language="russian", task="transcribe")
 
-model = WhisperForConditionalGeneration.from_pretrained(MODEL_ID)
+model = WhisperForConditionalGeneration.from_pretrained("openai/whisper-small")
+
+# processor = WhisperProcessor.from_pretrained("openai/whisper-small",
+#                                              language="russian",
+#                                              task="transcribe")
+#
+# model = WhisperForConditionalGeneration.from_pretrained(MODEL_ID)
 
 s3 = boto3.client('s3',
                   region_name=region_name,
@@ -90,7 +90,7 @@ async def handle_voice_message(update: Update, context: CallbackContext):
 
     input_features = processor(voice_data, sampling_rate=sample_rate, return_tensors="pt").input_features
 
-    predicted_ids = model.generate(input_features) #, forced_decoder_ids=forced_decoder_ids)
+    predicted_ids = model.generate(input_features, forced_decoder_ids=forced_decoder_ids)
     predicted_sentence = processor.batch_decode(predicted_ids, skip_special_tokens=True)[0]
 
     logger.log(logging.INFO, predicted_sentence)
