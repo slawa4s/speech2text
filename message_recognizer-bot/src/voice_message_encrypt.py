@@ -29,8 +29,9 @@ aws_secret_access_key = os.getenv('AWS_SECRET_KEY')
 bucket_name = os.getenv('BUCKET_NAME')
 
 START_MSG = "Привет! Отправьте мне голосовое сообщение"
-TRANSLATION_ACCURACY_QUESTION = "Это правильный перевод?"
-IGNORE_PREVIOUS_SUGGESTION = "Пожалуйста, проигнорируйте предыдущее предложение и попробуйте другой вариант перевода."
+TRANSLATION_ACCURACY_QUESTION = "Это правильное распознавание?"
+IGNORE_PREVIOUS_SUGGESTION = ("Пожалуйста, проигнорируйте предыдущее предложение и попробуйте другой вариант "
+                              "распознавания.")
 THANK_YOU_FOR_REPLY = "Спасибо за ответ."
 THANK_YOU_FOR_EVALUATION = "Спасибо за вашу оценку!"
 PROVIDE_ACCURATE_TRANSLATION = "Могли бы вы предоставить точный перевод?"
